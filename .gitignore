@@ -7,3 +7,5 @@ results/
 */__pycache__/
 *.pyc
 slurm-*.out
+__pycache__/
+*.pyc

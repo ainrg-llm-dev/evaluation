@@ -21,7 +21,9 @@ def main(args):
     else:
         model_obj = HFModel(args.model_path)
     model_name = args.model_path.split("/")[-1]
-    if args.save_time:
+    if args.project_name:
+        current_time = args.project_name
+    elif args.save_time:
         current_time = pd.Timestamp.now()
     else:
         current_time = ""
@@ -77,14 +79,17 @@ def main(args):
                     debug=args.debug,
                     thinking= args.thinking_mode
                 )
-            print(f"Evaluation for {dataset_name} completed.")    
+        if dataset_name != "mmlu":
+            
             save_output = EVAL[dataset_name](output)
-            if not os.path.exists(os.path.join(args.save_result_dir,model_name+"_"+str(current_time)[:19], "summary")):
-                os.makedirs(os.path.join(args.save_result_dir,model_name+"_"+str(current_time)[:19], "summary"))
-            with open(os.path.join(args.save_result_dir,model_name+"_"+str(current_time)[:19], "summary", f"{dataset_name}_report.json"), "w") as f:
-                json.dump(save_output, f, ensure_ascii=False, indent=2)    
-                
-    
+        else:
+            save_output = EVAL[dataset_name](os.path.join(args.save_result_dir,model_name+"_"+str(current_time)[:19], dataset_name))
+        print(f"Evaluation for {dataset_name} completed.")
+        if not os.path.exists(os.path.join(args.save_result_dir,model_name+"_"+str(current_time)[:19], "summary")):
+            os.makedirs(os.path.join(args.save_result_dir,model_name+"_"+str(current_time)[:19], "summary"))
+        with open(os.path.join(args.save_result_dir,model_name+"_"+str(current_time)[:19], "summary", f"{dataset_name}_report.json"), "w") as f:
+            json.dump(save_output, f, ensure_ascii=False, indent=2)
+                        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run evaluation on LLMs")
@@ -101,7 +106,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--data',
         nargs="+",
-        default=["belebele", "xcopa","mmlu", "mmlu_thai",  "xnli", "m3exam", "thai_exam", "m6exam"],
+        default=["belebele", "xcopa", "mmlu_thai",  "xnli", "m3exam", "thai_exam", "m6exam", "mmlu"],
         help='list of datasets to evaluate on (space-separated)'
     )
     
@@ -115,10 +120,11 @@ if __name__ == "__main__":
     
     parser.add_argument(
         "-t","--thinking-mode",
-        type=bool,
-        required=True,
-        choices=[True, False, None],
-        help="Recipe to use for evaluation, default is 'default'."
+        type=str,
+        required=False,
+        default=None,
+        choices=["True", "False", "no_chat_template", None],
+        help="thinking mode (default False)"
     )
     
     parser.add_argument("--debug", action="store_true", help="Run in debug mode")
@@ -139,6 +145,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--vllm", type=str, help="url of service")
     parser.add_argument("--api-key",type=str, help="api key of service")
+    parser.add_argument("--project-name",type=str, help="project name of service")
     args = parser.parse_args()
     set_seed(args.seed)
     main(args=args)

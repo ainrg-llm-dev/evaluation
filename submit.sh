@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH -p gpu-limited                       # Specify partition [Compute/Memory/GPU]
+#SBATCH -p gpu                       # Specify partition [Compute/Memory/GPU]
 #SBATCH -N 1 
 #SBATCH --ntasks-per-node=1		# Specify number of tasks per node
 #SBATCH --gpus-per-node=4		        # Specify total number of GPUs
 #SBATCH -t 48:00:00                    # Specify maximum time limit (hour: minute: second)
-#SBATCH -A lt200258                       # Specify project name
-#SBATCH -J qwen3-8B-LLaMA-Factory-200M                     # Specify job name
-#SBATCH --output=./logs/test-pipeline.out                 # Specify output file
+#SBATCH -A lt999001                       # Specify project name
+#SBATCH -J Q4Bc-eval        # Specify job name
+#SBATCH --output=./logs/gemma3-4B-cpt.out                 # Specify output file
 
 export NCCL_DEBUG=INFO
 export NCCL_SOCKET_IFNAME=hsn 

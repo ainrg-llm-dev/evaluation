@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import Callable, List
 from .constant import MMLU_EXAM_TYPE
+import os
 def eval_m3exam(df: pd.DataFrame) -> dict:
     subject_list = ['math', 'science', 'social', 'thai']
     level_list = ['high', 'low', 'mid']
@@ -75,17 +76,19 @@ def eval_thai_exam(df: pd.DataFrame) -> dict:
     
     return report_json
 
-def eval_mmlu(df: pd.DataFrame) -> dict:
+def eval_mmlu(path: str) -> dict:
     exam_type = MMLU_EXAM_TYPE
     report_json = {
         "exam": {},
         "overall": 0
     }
+    overall = 0
     for exam in exam_type:
-        filter_df = df[(df['exam'] == exam)]
-        report_json["exam"][exam] = round(filter_df["is_correct"].to_list().count(1) / filter_df.shape[0],4)
+        filter_df = pd.read_csv(os.path.join(path, f"{exam}_result.csv"))
+        report_json["exam"][exam] = round(filter_df["correctness"].to_list().count(1) / filter_df.shape[0],4)
+        overall += report_json["exam"][exam]
 
-    report_json["overall"] = round(df["is_correct"].to_list().count(1) / df.shape[0], 4)
+    report_json["overall"] = round(overall / len(exam_type), 4)
     
     return report_json
 
@@ -99,7 +102,7 @@ def default_eval(df: pd.DataFrame) -> dict:
     return report_json
 
 EVAL: dict[str, Callable[[pd.Series, List[str], bool], str]] = {
-    "mmlu": default_eval,
+    "mmlu": eval_mmlu,
     "mmlu_thai": default_eval,
     "xcopa": default_eval,
     "xnli": default_eval,

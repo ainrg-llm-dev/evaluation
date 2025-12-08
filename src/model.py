@@ -60,12 +60,14 @@ class HFModel(BaseModel):
         messages = [
             {"role": "user", "content": f"{prompt} \nMultiple Choice of {choices}\nPlease put your answer in a \\boxed, e.g. \n {FORMATTERS['choices'](choices)}"},
         ]
-        if thinking_mode != None:
+        if thinking_mode == "no_chat_template":
+            text = messages[0]['content'] + "The answer is: "
+        elif thinking_mode in ["True", "False"]:
             text = self.tokenizer.apply_chat_template(
             messages,
             tokenize=False,
             add_generation_prompt=True,
-            enable_thinking=thinking_mode)
+            enable_thinking=bool(thinking_mode))
         else:
             text = self.tokenizer.apply_chat_template(
                 messages,

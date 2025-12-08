@@ -6,10 +6,11 @@ import pandas as pd
 from ..model import BaseModel, HFModel, OpenAIModel, VLLMModel
 import os
 from ..prompt_process.postprocess import PostProcessor
+from transformers import GenerationConfig
 class Evaluator:
     def __init__(self, model_obj: BaseModel):
         self.model_obj = model_obj
-    @torch.no_grad()
+    @torch.inference_mode()
     def eval_pt(
         self,
         test_df : pd.DataFrame,
@@ -26,6 +27,10 @@ class Evaluator:
         debug: bool = False,
         **kwargs,
     ):
+        if os.path.exists(os.path.join(save_result_dir,model_name+"_"+str(current_time)[:19], task_name, f"{exam_type}_result.csv")):
+            print(f"Result for {model_name} on {task_name} with {exam_type} already exists. Skipping evaluation.")
+            return pd.read_csv(os.path.join(save_result_dir,model_name+"_"+str(current_time)[:19], task_name, f"{exam_type}_result.csv"))
+        
         if isinstance(self.model_obj, (OpenAIModel, VLLMModel)):
             raise NotImplementedError(
                 f"eval_pt currently does not support {self.model_obj.__class__.__name__} instance type. "
@@ -35,7 +40,6 @@ class Evaluator:
         score = []
         all_prompt_list = []
         
-        
         prompt, choices, answer_types, answer = get_prompt(
             task_name,
             test_df.iloc[0],
@@ -44,7 +48,6 @@ class Evaluator:
             include_answer=False,
             instuction=instuction
         )
-        
         
         all_probs = {f"prob_{i}":[] for i in range(len(choices))}
         if task_name == "m3exam":
@@ -109,7 +112,7 @@ class Evaluator:
                 index=False,
             )
         return test_df
-    @torch.no_grad()
+    @torch.inference_mode()
     def eval_it(
         self,
         test_df: pd.DataFrame,
@@ -127,10 +130,7 @@ class Evaluator:
         thinking: bool = True,
         **kwargs,
     ):
-        try: 
-            thinking = bool(thinking)
-        except:
-            thinking = None
+
         result = []
         score = []
         all_prompt_list = []
@@ -162,11 +162,30 @@ class Evaluator:
 
             if isinstance(self.model_obj, HFModel):
                 model_inputs = self.model_obj.tokenizer(full_prompt_list, return_tensors="pt", padding=True, truncation=True).to(self.model_obj.model.device)
-                generated_ids = self.model_obj.generate(
-                    **model_inputs,
-                    max_new_tokens=max_seq_len,
-                    pad_token_id=self.model_obj.tokenizer.eos_token_id,
-                )
+                generation_config = GenerationConfig(
+                        temperature=0.2,
+                        top_p=0.95,
+                        top_k=20,
+                        repetition_penalty=1.2,
+                        do_sample=True,
+                    )
+                if thinking == "no_chat_template":
+                    generated_ids = self.model_obj.generate(
+                        **model_inputs,
+                        max_new_tokens=5,
+                        pad_token_id=self.model_obj.tokenizer.eos_token_id,
+                        generation_config=generation_config,
+                        num_beams=5,
+                        use_cache=True,
+                    )
+                else:
+                    generated_ids = self.model_obj.generate(
+                        **model_inputs,
+                        max_new_tokens=max_seq_len,
+                        pad_token_id=self.model_obj.tokenizer.eos_token_id,
+                        generation_config=generation_config,
+                        use_cache=True,
+                    )
                 for i, input_ids in enumerate(model_inputs.input_ids):
                     output_ids = generated_ids[i][len(input_ids):].tolist()
                     decoded_output = self.model_obj.tokenizer.decode(output_ids, skip_special_tokens=True)
@@ -178,7 +197,8 @@ class Evaluator:
                     score.append(1 if pred == answer_list[i] else 0)
             elif isinstance(self.model_obj, (OpenAIModel, VLLMModel)):
                     outputs = self.model_obj.generate(
-                        full_prompt_list
+                        full_prompt_list,
+                        use_cache=True,
                     )
                     for i, decoded_output in enumerate(outputs):
                         processor = PostProcessor(decoded_output)
