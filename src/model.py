@@ -33,7 +33,7 @@ class HFModel(BaseModel):
             pad_token_id=self.tokenizer.pad_token_id,
             device_map="auto",
             trust_remote_code=True,
-            torch_dtype=torch.bfloat16
+            dtype=torch.bfloat16
         ).eval()
         self.model.generation_config = GenerationConfig.from_pretrained(
             self.checkpoint_path,

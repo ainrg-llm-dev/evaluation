@@ -44,18 +44,20 @@ def eval_m6exam(df: pd.DataFrame) -> dict:
         "year": {},
         "overall": 0
     }
-    try:
-        for subject in subject_list:
+
+    for subject in subject_list:
+        try:
             filter_df = df[(df['subject'] == subject)]
             report_json["subject"][subject] = round(filter_df["correctness"].to_list().count(1) / filter_df.shape[0],4)
-    except:
-        report_json["subject"] = "N/A"
-    try:
-        for year in years:
+        except:
+            report_json["subject"][subject] = "N/A"
+
+    for year in years:
+        try:
             filter_df = df[(df['year'] == year)]
             report_json["year"][year] = round(filter_df["correctness"].to_list().count(1) / filter_df.shape[0],4)
-    except:
-        report_json["year"] = "N/A"
+        except:
+            report_json["year"][year] = "N/A"
     report_json["overall"] = round(df["correctness"].to_list().count(1) / df.shape[0], 4)
     
     return report_json
@@ -66,12 +68,13 @@ def eval_thai_exam(df: pd.DataFrame) -> dict:
         "exam": {},
         "overall": 0
     }
-    try:
-        for exam in exam_type:
+    
+    for exam in exam_type:
+        try:
             filter_df = df[(df['subject'] == exam)]
             report_json["exam"][exam] = round(filter_df["correctness"].to_list().count(1) / filter_df.shape[0],4)
-    except:
-        report_json["exam"] = "N/A"
+        except:
+            report_json["exam"][exam] = "N/A"
     report_json["overall"] = round(df["correctness"].to_list().count(1) / df.shape[0], 4)
     
     return report_json
@@ -101,6 +104,39 @@ def default_eval(df: pd.DataFrame) -> dict:
     }
     return report_json
 
+
+ 
+def eval_mmlu_proX_thai_exam(df: pd.DataFrame) -> dict:
+    exam_type = ['biology',
+                'business',
+                'chemistry',
+                'computer science',
+                'economics',
+                'engineering',
+                'health',
+                'history',
+                'law',
+                'math',
+                'other',
+                'philosophy',
+                'physics',
+                'psychology']
+    report_json = {
+        "category": {},
+        "overall": 0
+    }
+    
+    for exam in exam_type:
+        try:
+            filter_df = df[(df['category'] == exam)]
+            report_json["category"][exam] = round(filter_df["correctness"].to_list().count(1) / filter_df.shape[0],4)
+        except:
+            report_json["category"][exam] = "N/A"
+    report_json["overall"] = round(df["correctness"].to_list().count(1) / df.shape[0], 4)
+    
+    return report_json
+ 
+
 EVAL: dict[str, Callable[[pd.Series, List[str], bool], str]] = {
     "mmlu": eval_mmlu,
     "mmlu_thai": default_eval,
@@ -109,5 +145,6 @@ EVAL: dict[str, Callable[[pd.Series, List[str], bool], str]] = {
     "belebele": default_eval,
     "m3exam": eval_m3exam,
     "m6exam": eval_m6exam,
-    "thai_exam": eval_thai_exam,   
+    "thai_exam": eval_thai_exam, 
+    "mmlu_proX_thai": eval_mmlu_proX_thai_exam
 }

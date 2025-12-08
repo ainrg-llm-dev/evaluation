@@ -34,6 +34,23 @@ def format_mmlu_thai(
         example += "\nคำตอบ:"
     return example
 
+# ---------- MMLU-ProX-Thai format ----------
+def format_mmlu_proX_thai(
+    line: pd.Series,
+    choices: List[str],
+    include_answer: bool = True
+) -> str:
+    example = "คำถาม: " + line["question"]
+    for i, choice in enumerate(choices):
+        example += f'\n{choice}. {line[f"option_{i}"]}'
+
+    if include_answer:
+        example += "\nคำตอบ: " + line["answer_text"] + "\n\n"
+    else:
+        example += "\nคำตอบ:"
+    return example
+
+
 # ---------- XCOPA format ----------
 def format_xcopa(
     line: pd.Series,
@@ -98,6 +115,7 @@ FORMATTERS: dict[str, Callable[[pd.Series, List[str], bool], str]] = {
     "m3exam": generate_prompt,
     "m6exam": format_m6exam,
     "thai_exam": format_thai_exam,
+    "mmlu_proX_thai": format_mmlu_proX_thai,
     "choices": format_choices
 }
 
@@ -109,7 +127,8 @@ ANSWER_TYPES: dict[str, str] ={
     "belebele": "คำตอบ:",
     "m3exam": "คำตอบ:",
     "m6exam": "คำตอบ:",
-    "thai_exam": "คำตอบ:"
+    "thai_exam": "คำตอบ:",
+    "mmlu_proX_thai": "Answer:"
 }
 
 ANSWER_CHOICES: dict[str, List[str]] = {
@@ -120,5 +139,6 @@ ANSWER_CHOICES: dict[str, List[str]] = {
     "belebele": ["A", "B", "C", "D"],
     #"m3exam": ["A", "B", "C", "D", "E"] special case
     "m6exam": ["1", "2", "3", "4", "5"],
-    "thai_exam": ["a","b","c","d","e"]
+    "thai_exam": ["a","b","c","d","e"],
+    "mmlu_proX_thai" : ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 }

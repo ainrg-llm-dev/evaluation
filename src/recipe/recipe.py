@@ -1,7 +1,7 @@
 import json
 from ..download_data import (download_m3exam, download_thai_exam, download_m6exam, 
                              download_mmlu, download_mmlu_thai, download_belebele,
-                             download_xnli, download_xcopa)
+                             download_xnli, download_xcopa, download_mmlu_proX)
 from .constant import MMLU_EXAM_TYPE
 import pandas as pd
 import numpy as np
@@ -105,6 +105,13 @@ def xcopa_recipe():
     test_df = restructure_dataframe(test_df, choices=ANSWER_CHOICES["xcopa"])
     yield test_df, val_df, None
     
+def mmlu_proX_thai_recipe():
+    download_mmlu_proX()
+    mmlu_dataset = datasets.load_dataset("./data/MMLU-ProX", "th")
+    dev_questions_df = pd.DataFrame(mmlu_dataset["validation"]).rename(columns={"answer": "answer_text"})
+    test_questions_df = pd.DataFrame(mmlu_dataset["test"]).rename(columns={"answer": "answer_text"})
+    yield test_questions_df, dev_questions_df, None
+    
 RECIPE = {
     "m3exam": m3exam_recipe,
     "m6exam": m6exam_recipe,
@@ -113,5 +120,6 @@ RECIPE = {
     "mmlu_thai": mmlu_thai_recipe,
     "belebele": belebele_recipe,
     "xnli": xnli_recipe,
-    "xcopa": xcopa_recipe
+    "xcopa": xcopa_recipe,
+    "mmlu_proX_thai": mmlu_proX_thai_recipe
     }

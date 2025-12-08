@@ -106,7 +106,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--data',
         nargs="+",
-        default=["belebele", "xcopa", "mmlu_thai",  "xnli", "m3exam", "thai_exam", "m6exam", "mmlu"],
+        default=["belebele", "xcopa", "mmlu_thai",  "xnli", "m3exam", "thai_exam", "m6exam", "mmlu", "mmlu_proX_thai"],
         help='list of datasets to evaluate on (space-separated)'
     )
     

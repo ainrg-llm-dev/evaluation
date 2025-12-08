@@ -167,6 +167,25 @@ wget https://raw.githubusercontent.com/cambridgeltl/xcopa/master/data/th/test.th
 wget https://raw.githubusercontent.com/cambridgeltl/xcopa/master/data/th/val.th.jsonl -O ./data/xcopa/xcopa_thai_val.jsonl
 """
 
+# ---------- MMLU-ProX --------------
+def download_mmlu_proX():
+    dataset_dir = "./data/MMLU-ProX"
+    if not os.path.exists(dataset_dir):
+        logging.info("Downloading MMLU-ProX dataset from Hugging Face...")
+        local_dir = snapshot_download(
+            repo_id="li-lab/MMLU-ProX",
+            repo_type="dataset",
+            local_dir="./data/MMLU-ProX"
+        )
+        logging.info("MMLU-ProX Dataset downloaded to: %s", local_dir)
+    else:
+        logging.info("MMLU-ProX Dataset already exists at: %s", dataset_dir)
+
+### if can't connect to internet with backend node
+"""bash
+hf download li-lab/MMLU-ProX --local-dir ./data/MMLU-ProX --repo-type dataset
+"""
+
 if __name__ == "__main__":
     download_m3exam()
     download_m6exam()
@@ -176,3 +195,4 @@ if __name__ == "__main__":
     download_xnli()
     download_belebele()
     download_xcopa()
+    download_mmlu_proX()
