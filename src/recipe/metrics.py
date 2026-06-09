@@ -14,8 +14,10 @@ def eval_m3exam(df: pd.DataFrame) -> dict:
     }
     for subject in subject_list:
         filter_df = df[(df['subject'] == subject)]
-        report_json["subject"][subject] = round(filter_df["correctness"].to_list().count(1) / filter_df.shape[0],4)
-    
+        try:
+            report_json["subject"][subject] = round(filter_df["correctness"].to_list().count(1) / filter_df.shape[0],4)
+        except:
+            report_json["subject"][subject] = "N/A"
    
     for level in level_list:
         try:
@@ -38,7 +40,7 @@ def eval_m3exam(df: pd.DataFrame) -> dict:
 
 def eval_m6exam(df: pd.DataFrame) -> dict:
     subject_list = ['english', 'math', 'science', 'social', 'thai']
-    years = [2016, 2017, 2018, 2019, 2020, 2021]
+    years = [2019, 2020, 2021]
     report_json = {
         "subject": {},
         "year": {},

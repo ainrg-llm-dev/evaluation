@@ -6,14 +6,20 @@ from .m3exam_utils import generate_prompt
 def format_default(
     line: pd.Series,
     choices: List[str],
-    include_answer: bool = True
+    include_answer: bool = True,
+    is_instruction: bool = False
 ) -> str:
     example = "Question: " + line["question"]
     for choice in choices:
         example += f'\n{choice}. {line[f"{choice}"]}'
 
+    if is_instruction:
+        answer = "\\boxed{" + line["answer_text"] + "}"
+    else:
+        answer = line["answer_text"]
+    
     if include_answer:
-        example += "\nAnswer: " + line["answer_text"] + "\n\n"
+        example += "\nAnswer: " + answer + "\n\n"
     else:
         example += "\nAnswer:"
     return example
@@ -22,14 +28,19 @@ def format_default(
 def format_mmlu_thai(
     line: pd.Series,
     choices: List[str],
-    include_answer: bool = True
+    include_answer: bool = True,
+    is_instruction: bool = False
 ) -> str:
     example = "คำถาม: " + line["question"]
     for choice in choices:
         example += f'\n{choice}. {line[f"{choice}"]}'
-
+    if is_instruction:
+        answer = "\\boxed{" + line["answer_text"] + "}"
+    else:
+        answer = line["answer_text"]
+    
     if include_answer:
-        example += "\nคำตอบ: " + line["answer_text"] + "\n\n"
+        example += "\nคำตอบ: " + answer + "\n\n"
     else:
         example += "\nคำตอบ:"
     return example
@@ -38,14 +49,20 @@ def format_mmlu_thai(
 def format_mmlu_proX_thai(
     line: pd.Series,
     choices: List[str],
-    include_answer: bool = True
+    include_answer: bool = True,
+    is_instruction: bool = False
 ) -> str:
     example = "คำถาม: " + line["question"]
     for i, choice in enumerate(choices):
         example += f'\n{choice}. {line[f"option_{i}"]}'
 
+    if is_instruction:
+        answer = "\\boxed{" + line["answer_text"] + "}"
+    else:
+        answer = line["answer_text"]
+    
     if include_answer:
-        example += "\nคำตอบ: " + line["answer_text"] + "\n\n"
+        example += "\nคำตอบ: " + answer + "\n\n"
     else:
         example += "\nคำตอบ:"
     return example
@@ -55,7 +72,8 @@ def format_mmlu_proX_thai(
 def format_xcopa(
     line: pd.Series,
     choices: List[str],
-    include_answer: bool = True
+    include_answer: bool = True,
+    is_instruction: bool = False
 ) -> str:
     example = (
         "คำถาม: เลือกเหตุผลที่ถูกต้องที่สุดจากสถานการณ์ที่กำหนดให้ "
@@ -65,10 +83,15 @@ def format_xcopa(
     for choice in choices:
         example += f'\n{choice}. {line[f"{choice}"]}'
 
-    if include_answer:
-        example += "\nเพราะ: " + line["answer_text"] + "\n\n"
+    if is_instruction:
+        answer = "\\boxed{" + line["answer_text"] + "}"
     else:
-        example += "\nเพราะ:"
+        answer = line["answer_text"]
+    
+    if include_answer:
+        example += "\nตอบ: " + answer + "\n\n"
+    else:
+        example += "\nตอบ:"
     return example
 
 
@@ -76,12 +99,18 @@ def format_xcopa(
 def format_m6exam(
     line: pd.Series,
     choices: List[str] = [],
-    include_answer: bool = True
+    include_answer: bool = True,
+    is_instruction: bool = False
 ) -> str:
     example = "ข้อ\n"+ line['"no"']+line["instruction"]+"\n"+ line["input"]
 
+    if is_instruction:
+        answer = "\\boxed{" + line["answer_text"] + "}"
+    else:
+        answer = line["answer_text"]
+    
     if include_answer:
-        example += "\nตอบ:" + line["answer_text"] + "\n\n"
+        example += "\nตอบ:" + answer + "\n\n"
     else:
         example += "\nตอบ:"
     return example
@@ -91,20 +120,24 @@ def format_thai_exam(
     line: dict,
     choices: List[str] = [],
     include_answer: bool = True,
+    is_instruction: bool = False
 ) -> str:
     exam_type = line["subject"]
     if exam_type != "ic":
         prompt = f"\n{line['question']}\na. {line['a']}\nb. {line['b']}\nc. {line['c']}\nd. {line['d']}\ne. {line['e']}\nคำตอบ:"
     else:
         prompt = f"\n{line['question']}\na. {line['a']}\nb. {line['b']}\nc. {line['c']}\nd. {line['d']}\nคำตอบ:"
-    
+    if is_instruction:
+        answer = " \\boxed{" + str(line["answer_text"]) + "}"
+    else:
+        answer = str(line["answer_text"])
     if include_answer:
-        prompt += str(line["answer_text"])
+        prompt += answer
     return prompt
 
-def format_choices(choices: List[str]) -> str:
-    """Format choices for display."""
-    return '\n'.join([f"The answer is: \\boxed{{{choice}}}" for i, choice in enumerate(choices)])
+# def format_choices(choices: List[str]) -> str:
+#     """Format choices for display."""
+#     return '\n'.join([f"The answer is: \\boxed{{{choice}}}" for i, choice in enumerate(choices)])
 
 FORMATTERS: dict[str, Callable[[pd.Series, List[str], bool], str]] = {
     "mmlu": format_default,
@@ -116,7 +149,7 @@ FORMATTERS: dict[str, Callable[[pd.Series, List[str], bool], str]] = {
     "m6exam": format_m6exam,
     "thai_exam": format_thai_exam,
     "mmlu_proX_thai": format_mmlu_proX_thai,
-    "choices": format_choices
+    # "choices": format_choices
 }
 
 ANSWER_TYPES: dict[str, str] ={

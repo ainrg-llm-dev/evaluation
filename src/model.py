@@ -56,9 +56,9 @@ class HFModel(BaseModel):
         logits = outputs["logits"][:, -1, :]
         log_probs = torch.nn.functional.softmax(logits, dim=-1)
         return log_probs, {"tokens": {"input_ids": input_ids}}
-    def format_instructions(self, prompt: str, choices: List[str], thinking_mode=True) -> str:
+    def format_instructions(self, prompt: str, thinking_mode=True) -> str:
         messages = [
-            {"role": "user", "content": f"{prompt} \nMultiple Choice of {choices}\nPlease put your answer in a \\boxed, e.g. \n {FORMATTERS['choices'](choices)}"},
+            {"role": "user", "content": f"{prompt} \nช่วยตอบลงในช่อง \\boxed{{}} เท่านั้นหากตอบถูกแต่ไม่อยู่ในรูปแบบนี้จะไม่ถูกนับเป็นคำตอบที่ถูกต้อง"},
         ]
         if thinking_mode == "no_chat_template":
             text = messages[0]['content'] + "The answer is: "
@@ -100,7 +100,7 @@ class OpenAIModel(BaseModel):
 
     def format_instructions(self, prompt: str, choices: List[str], thinking_mode=True):
         messages = [
-            {"role": "user", "content": f"{prompt} \nMultiple Choice of {choices}\nPlease put your answer in a \\boxed, e.g. \n {FORMATTERS['choices'](choices)}"}
+            {"role": "user", "content": f"{prompt} \nช่วยตอบลงในช่อง \\boxed{{}} เท่านั้นหากตอบถูกแต่ไม่อยู่ในรูปแบบนี้จะไม่ถูกนับเป็นคำตอบที่ถูกต้อง"},
         ]
         return messages
     def load_model(self):
@@ -231,10 +231,7 @@ class VLLMModel(BaseModel):
             thinking_mode: Whether to enable thinking mode (not used in vLLM API)
         """
         messages = [
-            {
-                "role": "user", 
-                "content": f"{prompt} \nMultiple Choice of {choices}\nPlease put your answer in a \\boxed, e.g. \n {FORMATTERS['choices'](choices)}"
-            }
+            {"role": "user", "content": f"{prompt} \nช่วยตอบลงในช่อง \\boxed{{}} เท่านั้นหากตอบถูกแต่ไม่อยู่ในรูปแบบนี้จะไม่ถูกนับเป็นคำตอบที่ถูกต้อง"},
         ]
         return messages
     

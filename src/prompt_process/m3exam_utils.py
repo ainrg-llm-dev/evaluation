@@ -6,25 +6,25 @@ import os
 
 # ---------- M3EXAM Format ----------
 # original from https://github.com/DAMO-NLP-SG/M3Exam
-def generate_dev_examples(dev_questions, lang, method):
+def generate_dev_examples(dev_questions, lang, method, is_instruction=False):
     dev_example_dict = defaultdict(lambda: defaultdict(list))
     for q in dev_questions:
         level = q['level']
         cate = q['subject_category']
-        dev_string = generate_one_example(q, lang, method, fill_answer=True)
+        dev_string = generate_one_example(q, lang, method, fill_answer=True, is_instruction=is_instruction)
         dev_example_dict[level][cate].append(dev_string)
     
     return dev_example_dict
 
-def generate_one_example(question, lang, method, fill_answer=False):
-    answer_word = {
-        'english': "Answer:", 'chinese': '答案：', 'vietnamese': 'Câu trả lời:', 'thai': 'คำตอบ:', 
-        'italian': 'La risposta:', 'javanese': 'Wangsulan:', 'swahili': 'Jibu:', 
-        'afrikaans': 'Antwoord:', 'portuguese': 'Responder:'
-    }
+def generate_one_example(question, lang, method, fill_answer=False, is_instruction=False):
+    # answer_word = {
+    #     'english': "Answer:", 'chinese': '答案：', 'vietnamese': 'Câu trả lời:', 'thai': 'คำตอบ:', 
+    #     'italian': 'La risposta:', 'javanese': 'Wangsulan:', 'swahili': 'Jibu:', 
+    #     'afrikaans': 'Antwoord:', 'portuguese': 'Responder:'
+    # }
     background = '\n' + '\n'.join(question['background_description']) if question['background_description'] else ''
     if method == 'default':
-        prompt = background + '\n' + question['question_text'] + '\n' + '\n'.join(question['options']) + f'\n{answer_word[lang]}'
+        prompt = background + '\n' + question['question_text'] + '\n' + '\n'.join(question['options'])
     elif method == 'en-instruct':
         prompt = background + '\n' + question['question_text'] + '\n' + '\n'.join(question['options']) + f'\nAnswer:'
     elif method == 'en-trans':
@@ -32,8 +32,13 @@ def generate_one_example(question, lang, method, fill_answer=False):
     else:
         raise ValueError(f"Unknown method: {method}")
     
+    if is_instruction:
+        answer =  " \\boxed{" + str(question['answer_text'])  + "}"
+    else:
+        answer = str(question['answer_text'])
+    
     if fill_answer:
-        prompt += str(question['answer_text'])
+        prompt += answer
     
     return prompt
 
@@ -58,7 +63,7 @@ def get_choices_m3exam(row : pd.Series):
         return []
     
     
-def generate_prompt(lang, method, setting, model, test_question, dev_question):
+def generate_prompt(lang, method, setting, model, test_question, dev_question, is_instruction=False):
     subject2target = {
         'english': {'language': 'English', 'math': "Math", 'social-science': "Social Science", 'natural-science': 'Natural Science'},
         'english4all': {'language': 'Language', 'math': "Math", 'social-science': "Social Science", 'natural-science': 'Natural Science'},
@@ -85,17 +90,17 @@ def generate_prompt(lang, method, setting, model, test_question, dev_question):
         raise ValueError(f"Unknown method: {method}")
     
     if setting == 'zero-shot':
-        prompt = hint + '\n\n' + generate_one_example(test_question, lang, method)
+        prompt = hint + '\n\n' + generate_one_example(test_question, lang, method, is_instruction)
     elif setting == 'few-shot':
         dev_questions_list = dev_question[test_question['level']][test_question['subject_category']]
-        prompt = hint + '\n\n' + '\n\n'.join(dev_questions_list) + '\n\n' + generate_one_example(test_question, lang, method)
+        prompt = hint + '\n\n' + '\n\n'.join(dev_questions_list) + '\n\n' + generate_one_example(test_question, lang, method, is_instruction)
     else:
         raise ValueError(f"Unknown setting: {setting}")
 
     return prompt
 
 DEV_EXAMPLES_CACHE = None
-def load_dev_examples_once(lang="thai", method="default"):
+def load_dev_examples_once(lang="thai", method="default", is_instruction=False):
     """Load dev examples into global cache if not already loaded."""
     global DEV_EXAMPLES_CACHE
     if DEV_EXAMPLES_CACHE is None:
@@ -106,6 +111,6 @@ def load_dev_examples_once(lang="thai", method="default"):
         with open(json_path, "r") as f:
             dev_questions = json.load(f)
 
-        DEV_EXAMPLES_CACHE = generate_dev_examples(dev_questions, lang, method)
+        DEV_EXAMPLES_CACHE = generate_dev_examples(dev_questions, lang, method, is_instruction)
         logging.info(f"Loaded dev examples: {sum(len(cats) for cats in DEV_EXAMPLES_CACHE.values())} categories")
     return DEV_EXAMPLES_CACHE

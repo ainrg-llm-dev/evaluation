@@ -147,13 +147,13 @@ class Evaluator:
                     few_shot_line=dev_df,
                     num_shots=num_shots,
                     include_answer=False,
-                    instuction=instuction
+                    instuction=instuction,
+                    is_instruction=True,
                 )
                 
                 chat_template_apply = self.model_obj.format_instructions(
                     prompt,
-                    choices,
-                    thinking_mode=thinking
+                    thinking_mode=True if thinking=="True" else False 
                 )
                 
                 full_prompt_list.append(chat_template_apply)
@@ -163,11 +163,8 @@ class Evaluator:
             if isinstance(self.model_obj, HFModel):
                 model_inputs = self.model_obj.tokenizer(full_prompt_list, return_tensors="pt", padding=True, truncation=True).to(self.model_obj.model.device)
                 generation_config = GenerationConfig(
-                        temperature=0.2,
-                        top_p=0.95,
-                        top_k=20,
-                        repetition_penalty=1.2,
                         do_sample=True,
+                        max_new_tokens=8192 if thinking == "True" else 1024,
                     )
                 if thinking == "no_chat_template":
                     generated_ids = self.model_obj.generate(
@@ -181,13 +178,12 @@ class Evaluator:
                 else:
                     generated_ids = self.model_obj.generate(
                         **model_inputs,
-                        max_new_tokens=max_seq_len,
                         pad_token_id=self.model_obj.tokenizer.eos_token_id,
                         generation_config=generation_config,
                         use_cache=True,
                     )
                 for i, input_ids in enumerate(model_inputs.input_ids):
-                    output_ids = generated_ids[i][len(input_ids):].tolist()
+                    output_ids = generated_ids[i][len(input_ids)-1:].tolist()
                     decoded_output = self.model_obj.tokenizer.decode(output_ids, skip_special_tokens=True)
                     processor = PostProcessor(decoded_output)
                     thinks.append(processor.extract_think())

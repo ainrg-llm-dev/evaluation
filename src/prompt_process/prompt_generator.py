@@ -4,7 +4,7 @@ from .m3exam_utils import load_dev_examples_once, get_choices_m3exam
 from .formatters import FORMATTERS, ANSWER_CHOICES, ANSWER_TYPES
 import logging
 
-def generate_few_shot_prompt(num_shots: int, dev_df: pd.DataFrame, test_df: pd.Series, instuction: str, task_name: str, choices: List[str]):
+def generate_few_shot_prompt(is_instruction: bool, num_shots: int, dev_df: pd.DataFrame, test_df: pd.Series, instuction: str, task_name: str, choices: List[str]):
     prompt = instuction + "\n\n"
     try:
         subject_value = test_df["subject"]
@@ -17,6 +17,7 @@ def generate_few_shot_prompt(num_shots: int, dev_df: pd.DataFrame, test_df: pd.S
             dev_df.iloc[shot, :],
             choices,
             include_answer=True,
+            is_instruction=is_instruction,
         ) + "\n"
 
     return prompt
@@ -49,23 +50,24 @@ def get_prompt(
     few_shot_line: pd.DataFrame = None,
     instuction: str = "",
     num_shots: int = 5,
-    include_answer: bool = True
+    include_answer: bool = True,
+    is_instruction: bool = False,
 ) -> str:
     if task_name not in FORMATTERS:
         logging.error(f"Task name '{task_name}' is not supported.")
 
     if task_name != "m3exam":
         if num_shots > 0 and few_shot_line is not None:
-            return generate_few_shot_prompt(min(5,num_shots), few_shot_line, line, instuction, task_name, ANSWER_CHOICES[task_name])+FORMATTERS[task_name](line, ANSWER_CHOICES[task_name], False), ANSWER_CHOICES[task_name], ANSWER_TYPES[task_name], line["answer_text"]
+            return generate_few_shot_prompt(is_instruction, min(5,num_shots), few_shot_line, line, instuction, task_name, ANSWER_CHOICES[task_name])+FORMATTERS[task_name](line, ANSWER_CHOICES[task_name], False, is_instruction), ANSWER_CHOICES[task_name], ANSWER_TYPES[task_name], line["answer_text"]
         elif num_shots > 0 and few_shot_line is None:
             logging.error("num_shots > 0 but few_shot_line is None. Please provide a valid few_shot_line DataFrame.")
             raise ValueError("num_shots > 0 but few_shot_line is None. Please provide a valid few_shot_line DataFrame.")
         
-        return FORMATTERS[task_name](line, ANSWER_CHOICES[task_name], include_answer), ANSWER_CHOICES[task_name], ANSWER_TYPES[task_name], line["answer_text"]
+        return FORMATTERS[task_name](line, ANSWER_CHOICES[task_name], include_answer, is_instruction), ANSWER_CHOICES[task_name], ANSWER_TYPES[task_name], line["answer_text"]
     else:
         choices = get_choices_m3exam(line)
         lang = 'thai'
         method = 'default'
         setting = 'few-shot'
-        dev_examples = load_dev_examples_once(lang, method)
-        return FORMATTERS[task_name](lang, method, setting, None, line, dev_examples), choices, ANSWER_TYPES[task_name], line["answer_text"]
+        dev_examples = load_dev_examples_once(lang, method, is_instruction)
+        return FORMATTERS[task_name](lang, method, setting, None, line, dev_examples, is_instruction), choices, ANSWER_TYPES[task_name], line["answer_text"]

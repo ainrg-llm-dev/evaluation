@@ -4,9 +4,9 @@
 #SBATCH --ntasks-per-node=1		# Specify number of tasks per node
 #SBATCH --gpus-per-node=4		        # Specify total number of GPUs
 #SBATCH -t 120:00:00                    # Specify maximum time limit (hour: minute: second)
-#SBATCH -A lt999001                       # Specify project name
-#SBATCH -J b-mmluProX        # Specify job name
-#SBATCH --output=./logs/base_mmlu_proX.out                 # Specify output file
+#SBATCH -A lt200258                       # Specify project name
+#SBATCH -J 17500-think        # Specify job name
+#SBATCH --output=./logs/17500-think.out                 # Specify output file
 
 export NCCL_DEBUG=INFO
 export NCCL_SOCKET_IFNAME=hsn 
